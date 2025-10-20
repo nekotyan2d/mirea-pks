@@ -10,9 +10,25 @@ Console.Write("h: ");
 int h = Convert.ToInt32(Console.ReadLine());
 
 int d = 0;
+int left = 0;
+int right = Math.Min(w, h);
 
-while ((a + 2 * d) <= w && (b + 2 * d) <= h)
+while (left <= right)
 {
-    d++;
-    
+    int mid = (left + right) / 2;
+
+    int width = w / (a + 2 * mid);
+    int height = h / (b + 2 * mid);
+
+    if (width * height >= n)
+    {
+        d = mid;
+        left = mid + 1;
+    }
+    else
+    {
+        right = mid - 1;
+    }
 }
+
+Console.WriteLine($"Ответ d = {d}");
