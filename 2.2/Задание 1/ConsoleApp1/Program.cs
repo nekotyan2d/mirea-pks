@@ -1,5 +1,5 @@
-﻿double[,] A = null;
-double[,] B = null;
+﻿double[,]? A = null;
+double[,]? B = null;
 
 while (true)
 {
@@ -320,87 +320,229 @@ void FindInverseMatrix()
         return;
     }
 
-    double det = Determinant(A);
-    if (Math.Abs(det) < 1e-12)
-    {
-        Console.WriteLine("Матрица вырождена, обратная матрица не существует.");
+    double[,]? inverse = InverseMatrix(A);
+    if (inverse == null)
         return;
-    }
-
-    double[,] inverse = InverseMatrix(A);
+        
     Console.WriteLine("Обратная матрица A:");
     PrintMatrix(inverse);
 }
 
-double[,] InverseMatrix(double[,] matrix)
+double[,]? InverseMatrix(double[,] matrix)
 {
     int n = matrix.GetLength(0);
-    double[,] augmented = new double[n, 2 * n];
+    double[,] A = new double[n, n];
+    double[,] I = new double[n, n];
 
+    // копируем A и создаем единичную матрицу
     for (int i = 0; i < n; i++)
     {
         for (int j = 0; j < n; j++)
         {
-            augmented[i, j] = matrix[i, j];
+            A[i, j] = matrix[i, j];
+            I[i, j] = (i == j) ? 1.0 : 0.0;
         }
-        augmented[i, i + n] = 1.0;
     }
 
+    // по гауссу
     for (int i = 0; i < n; i++)
     {
-        // частичный выбор главного элемента
-        int pivot = i;
-        double maxAbs = Math.Abs(augmented[i, i]);
-        for (int r = i + 1; r < n; r++)
+        // поиск ведущего элемента
+        double pivot = A[i, i];
+        if (Math.Abs(pivot) < 1e-12)
         {
-            double absVal = Math.Abs(augmented[r, i]);
-            if (absVal > maxAbs)
+            // ищем строку с ненулевым элементом
+            int swapRow = i + 1;
+            while (swapRow < n && Math.Abs(A[swapRow, i]) < 1e-12)
             {
-                maxAbs = absVal;
-                pivot = r;
+                swapRow++;
+            }
+
+
+            if (swapRow == n)
+            {
+                Console.WriteLine("Матрица вырождена, обратная матрица не существует.");
+                return null;
+            }
+
+            // меняем строки местами
+            for (int k = 0; k < n; k++)
+            {
+                (A[i, k], A[swapRow, k]) = (A[swapRow, k], A[i, k]);
+                (I[i, k], I[swapRow, k]) = (I[swapRow, k], I[i, k]);
+            }
+
+            pivot = A[i, i];
+        }
+
+        // нормализуем строку, чтобы главный элемент стал равен 1
+        for (int k = 0; k < n; k++)
+        {
+            A[i, k] /= pivot;
+            I[i, k] /= pivot;
+        }
+
+        // обнуляем все элементы в столбце i кроме диагонали
+        for (int j = 0; j < n; j++)
+        {
+            if (j == i) continue;
+
+            double factor = A[j, i];
+            for (int k = 0; k < n; k++)
+            {
+                A[j, k] -= factor * A[i, k];
+                I[j, k] -= factor * I[i, k];
             }
         }
 
-        // меняем строки местами при необходимости
-        if (pivot != i)
-        {
-            for (int c = 0; c < 2 * n; c++)
-            {
-                double tmp = augmented[i, c];
-                augmented[i, c] = augmented[pivot, c];
-                augmented[pivot, c] = tmp;
-            }
-        }
+    }
 
-        // нормализуем главный элемент
-        double pivotVal = augmented[i, i];
-        for (int c = 0; c < 2 * n; c++)
-        {
-            augmented[i, c] /= pivotVal;
-        }
+    return I;
+}
 
-        // исключаем элементы в других строках
-        for (int r = 0; r < n; r++)
+void TransposeMatrices()
+{
+    if (A == null || B == null)
+    {
+        Console.WriteLine("Сначала создайте и заполните матрицы.");
+        return;
+    }
+
+    Console.WriteLine("Транспонированная матрица A:");
+    PrintMatrix(TransposeMatrix(A));
+    Console.WriteLine("Транспонированная матрица B:");
+    PrintMatrix(TransposeMatrix(B));
+}
+
+double[,] TransposeMatrix(double[,] matrix)
+{
+    int n = matrix.GetLength(0);
+    int m = matrix.GetLength(1);
+
+    double[,] T = new double[m, n];
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < m; j++)
         {
-            if (r != i)
-            {
-                double factor = augmented[r, i];
-                for (int c = 0; c < 2 * n; c++)
-                {
-                    augmented[r, c] -= factor * augmented[i, c];
-                }
-            }
+            T[j, i] = matrix[i, j];
         }
     }
 
-    double[,] inverse = new double[n, n];
+    return T;
+}
+
+void SolveEquationSystem()
+{
+    if (A == null)
+    {
+        Console.WriteLine("Сначала создайте и заполните матрицу A.");
+        return;
+    }
+
+    int n = A.GetLength(0);
+    int m = A.GetLength(1);
+
+    if (n != m)
+    {
+        Console.WriteLine("Матрица должна быть квадратной для решения системы уравнений.");
+        return;
+    }
+
+    Console.WriteLine("Введите свободные члены системы уравнений (вектор B):");
+    double[,] B = new double[n, 1];
+    for (int i = 0; i < n; i++)
+    {
+        Console.Write($"B[{i}]: ");
+        B[i, 0] = Convert.ToDouble(Console.ReadLine());
+    }
+
+    double[]? X = SolveGauss(A, B);
+
+    if (X == null)
+    {
+        Console.WriteLine("Система не имеет решения или имеет бесконечно много решений.");
+        return;
+    }
+
+    Console.WriteLine("Решение системы уравнений (вектор X):");
+    for (int i = 0; i < n; i++)
+    {
+        Console.WriteLine($"X[{i}] = {X[i]}");
+    }
+}
+
+double[]? SolveGauss(double[,] A, double[,] B)
+{
+    int n = A.GetLength(0);
+    double[,] C = new double[n, n + 1];
+
+    // [A|B]
     for (int i = 0; i < n; i++)
     {
         for (int j = 0; j < n; j++)
         {
-            inverse[i, j] = augmented[i, j + n];
+            C[i, j] = A[i, j];
         }
+        C[i, n] = B[i, 0];
     }
 
-    return inverse;
+    for (int i = 0; i < n; i++)
+    {
+        // поиск ведущего элемента
+        double pivot = A[i, i];
+        if (Math.Abs(pivot) < 1e-12)
+        {
+            // ищем строку с ненулевым элементом
+            int swapRow = i + 1;
+            while (swapRow < n && Math.Abs(A[swapRow, i]) < 1e-12)
+            {
+                swapRow++;
+            }
+
+
+            if (swapRow == n)
+            {
+                Console.WriteLine("Матрица вырождена, обратная матрица не существует.");
+                return null;
+            }
+
+            // меняем строки местами
+            for (int k = 0; k < n; k++)
+            {
+                (A[i, k], A[swapRow, k]) = (A[swapRow, k], A[i, k]);
+                (C[i, k], C[swapRow, k]) = (C[swapRow, k], C[i, k]);
+            }
+
+            pivot = A[i, i];
+        }
+
+        // нормализуем строку, чтобы главный элемент стал равен 1
+        for (int k = 0; k < n; k++)
+        {
+            A[i, k] /= pivot;
+            C[i, k] /= pivot;
+        }
+
+        // обнуляем все элементы в столбце i кроме диагонали
+        for (int j = 0; j < n; j++)
+        {
+            if (j == i) continue;
+
+            double factor = A[j, i];
+            for (int k = 0; k < n; k++)
+            {
+                A[j, k] -= factor * A[i, k];
+                C[j, k] -= factor * C[i, k];
+            }
+        }
+
+    }
+
+    double[] X = new double[n];
+    for (int i = 0; i < n; i++)
+    {
+        X[i] = C[i, n];
+    }
+
+    return X;
 }
