@@ -3,6 +3,7 @@ double[,]? B = null;
 
 while (true)
 {
+    PrintSpacer();
     Console.WriteLine("1. Создание двух матриц размерности n*m");
     Console.WriteLine("2. Заполнение матриц значениями с клавиатуры");
     Console.WriteLine("3. Заполнение матриц рандомными числами в диапазоне [a; b] ");
@@ -18,36 +19,51 @@ while (true)
     switch (choice)
     {
         case 1:
+            PrintSpacer();
             CreateMatrices();
             break;
         case 2:
+            PrintSpacer();
             FillMatricesFromKeyboard();
             break;
         case 3:
+            PrintSpacer();
             FillMatricesWithRandomNumbers();
             break;
         case 4:
+            PrintSpacer();
             SumMatrices();
             break;
         case 5:
+            PrintSpacer();
             MultiplyMatrices();
             break;
         case 6:
+            PrintSpacer();
             CalculateDeterminant();
             break;
         case 7:
+            PrintSpacer();
             FindInverseMatrix();
             break;
         case 8:
+            PrintSpacer();
             TransposeMatrices();
             break;
         case 9:
+            PrintSpacer();
             SolveEquationSystem();
             break;
         default:
+            PrintSpacer();
             Console.WriteLine("Некорректный выбор. Пожалуйста, выберите действие от 1 до 9.");
             break;
     }
+}
+
+void PrintSpacer()
+{
+    Console.WriteLine("______________________");
 }
 
 void PrintMatrix(double[,] matrix)
@@ -67,15 +83,21 @@ void PrintMatrix(double[,] matrix)
 
 void CreateMatrices()
 {
-    Console.Write("Введите количество строк n: ");
+    Console.Write("A: Введите количество строк n: ");
     int n = Convert.ToInt32(Console.ReadLine());
-    Console.Write("Введите количество столбцов m: ");
+    Console.Write("A: Введите количество столбцов m: ");
     int m = Convert.ToInt32(Console.ReadLine());
 
     A = new double[n, m];
+    Console.WriteLine($"Созданы матрица A размерности {n}x{m}.");
+
+    Console.Write("B: Введите количество строк n: ");
+    n = Convert.ToInt32(Console.ReadLine());
+    Console.Write("B: Введите количество столбцов m: ");
+    m = Convert.ToInt32(Console.ReadLine());
     B = new double[n, m];
 
-    Console.WriteLine($"Созданы две матрицы размерности {n}x{m}.");
+    Console.WriteLine($"Создана матрица B размерности {n}x{m}.");
 }
 
 void FillMatricesFromKeyboard()
@@ -86,14 +108,34 @@ void FillMatricesFromKeyboard()
         return;
     }
 
-    Console.WriteLine("Заполнение матрицы A:");
-    FillMatrixFromKeyboard(A);
-    Console.WriteLine("Заполнение матрицы B:");
-    FillMatrixFromKeyboard(B);
-    Console.WriteLine("Матрица A:");
-    PrintMatrix(A);
-    Console.WriteLine("Матрица B:");
-    PrintMatrix(B);
+    Console.Write("Какую матрицу заполнить? (A/B/AB):");
+    string choice = Console.ReadLine();
+
+    if(choice == "A")
+    {
+        Console.WriteLine("Заполнение матрицы A:");
+        FillMatrixFromKeyboard(A);
+        Console.WriteLine("Матрица A:");
+        PrintMatrix(A);
+    }
+    else if(choice == "B")
+    {
+        Console.WriteLine("Заполнение матрицы B:");
+        FillMatrixFromKeyboard(B);
+        Console.WriteLine("Матрица B:");
+        PrintMatrix(B);
+    }
+    else
+    {
+        Console.WriteLine("Заполнение матрицы A:");
+        FillMatrixFromKeyboard(A);
+        Console.WriteLine("Матрица A:");
+        PrintMatrix(A);
+        Console.WriteLine("Заполнение матрицы B:");
+        FillMatrixFromKeyboard(B);
+        Console.WriteLine("Матрица B:");
+        PrintMatrix(B);
+    }
 }
 
 void FillMatrixFromKeyboard(double[,] matrix)
@@ -433,9 +475,9 @@ double[,] TransposeMatrix(double[,] matrix)
 
 void SolveEquationSystem()
 {
-    if (A == null)
+    if (A == null || B == null)
     {
-        Console.WriteLine("Сначала создайте и заполните матрицу A.");
+        Console.WriteLine("Сначала создайте и заполните матрицы.");
         return;
     }
 
@@ -446,14 +488,6 @@ void SolveEquationSystem()
     {
         Console.WriteLine("Матрица должна быть квадратной для решения системы уравнений.");
         return;
-    }
-
-    Console.WriteLine("Введите свободные члены системы уравнений (вектор B):");
-    double[,] B = new double[n, 1];
-    for (int i = 0; i < n; i++)
-    {
-        Console.Write($"B[{i}]: ");
-        B[i, 0] = Convert.ToDouble(Console.ReadLine());
     }
 
     double[]? X = SolveGauss(A, B);
@@ -467,13 +501,20 @@ void SolveEquationSystem()
     Console.WriteLine("Решение системы уравнений (вектор X):");
     for (int i = 0; i < n; i++)
     {
-        Console.WriteLine($"X[{i}] = {X[i]}");
+        Console.WriteLine($"X[{i}] = {Math.Round(X[i])}");
     }
 }
 
 double[]? SolveGauss(double[,] A, double[,] B)
 {
     int n = A.GetLength(0);
+
+    if(B.GetLength(1) != 1)
+    {
+        Console.WriteLine("Матрица B должна быть столбцом (n x 1) для решения системы уравнений.");
+        return null;
+    }
+
     double[,] C = new double[n, n + 1];
 
     // [A|B]
@@ -488,52 +529,41 @@ double[]? SolveGauss(double[,] A, double[,] B)
 
     for (int i = 0; i < n; i++)
     {
-        // поиск ведущего элемента
-        double pivot = A[i, i];
-        if (Math.Abs(pivot) < 1e-12)
+        int pivotRow = i;
+        double maxVal = Math.Abs(C[i, i]);
+        for (int r = i + 1; r < n; r++)
         {
-            // ищем строку с ненулевым элементом
-            int swapRow = i + 1;
-            while (swapRow < n && Math.Abs(A[swapRow, i]) < 1e-12)
+            if (Math.Abs(C[r, i]) > maxVal)
             {
-                swapRow++;
+                maxVal = Math.Abs(C[r, i]);
+                pivotRow = r;
             }
-
-
-            if (swapRow == n)
-            {
-                Console.WriteLine("Матрица вырождена, обратная матрица не существует.");
-                return null;
-            }
-
-            // меняем строки местами
-            for (int k = 0; k < n; k++)
-            {
-                (A[i, k], A[swapRow, k]) = (A[swapRow, k], A[i, k]);
-                (C[i, k], C[swapRow, k]) = (C[swapRow, k], C[i, k]);
-            }
-
-            pivot = A[i, i];
         }
 
-        // нормализуем строку, чтобы главный элемент стал равен 1
-        for (int k = 0; k < n; k++)
+        if (pivotRow != i)
         {
-            A[i, k] /= pivot;
+            for (int k = 0; k <= n; k++)
+            {
+                (C[i, k], C[pivotRow, k]) = (C[pivotRow, k], C[i, k]);
+            }
+        }
+
+        if (Math.Abs(C[i, i]) < 1e-12)
+        {
+            Console.WriteLine("Система вырождена или имеет бесконечно много решений.");
+            return null;
+        }
+
+        double pivot = C[i, i];
+        for (int k = i; k <= n; k++)
             C[i, k] /= pivot;
-        }
 
-        // обнуляем все элементы в столбце i кроме диагонали
-        for (int j = 0; j < n; j++)
+        for (int r = 0; r < n; r++)
         {
-            if (j == i) continue;
-
-            double factor = A[j, i];
-            for (int k = 0; k < n; k++)
-            {
-                A[j, k] -= factor * A[i, k];
-                C[j, k] -= factor * C[i, k];
-            }
+            if (r == i) continue;
+            double factor = C[r, i];
+            for (int k = i; k <= n; k++)
+                C[r, k] -= factor * C[i, k];
         }
 
     }
